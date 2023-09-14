@@ -1,6 +1,7 @@
 from __future__ import annotations
 from enum import Enum, IntEnum
 import dynamixel_sdk as dxlsdk
+import time
 
 __author__ = "Kan Keawhanam"
 __email__ = "kan.kea57@gmail.com"
@@ -11,6 +12,8 @@ class SerDXL:
     """Easy Dynamixel Interface for Python.
     Note: only tested on PH54
     """
+
+    wait_tick = 0.010  # sec
 
     def __init__(
         self, port: str, bandrate: int = 57600, protocol_ver: float = 2.0, motor_id=1
@@ -70,6 +73,18 @@ class SerDXL:
         self.write_reg(self.reg_table.LED_GREEN, g)
         self.write_reg(self.reg_table.LED_BLUE, b)
 
+    def is_moving(self) -> bool:
+        # inline code for little performance imporvement.
+        rxpackage, result, error = self.packet_handler.read1ByteTxRx(
+            self.port_handler, self.motor_id, self.reg_table.MOVING.value[0]
+        )
+        self._dxl_handle_error(result, error)
+        return rxpackage == 1
+
+    def wait_for_movement(self) -> None:
+        while self.is_moving():
+            time.sleep(self.wait_tick)
+
     def read_reg(self, name: Enum) -> int:
         addr = name.value[0]
         dat_len = name.value[1]
@@ -124,6 +139,8 @@ class SerDXL:
         self.port_handler.closePort()
 
     def _dxl_handle_error(self, result: int, error: int) -> None:
+        if result != dxlsdk.COMM_SUCCESS:
+            self.close_port()
         assert (
             result == dxlsdk.COMM_SUCCESS
         ), f"result = {result} :" + self.packet_handler.getRxPacketError(error)
