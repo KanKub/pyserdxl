@@ -4,7 +4,7 @@ import dynamixel_sdk as dxlsdk
 
 __author__ = "Kan Keawhanam"
 __email__ = "kan.kea57@gmail.com"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 class SerDXL:
@@ -22,13 +22,13 @@ class SerDXL:
         self._protocol_version = protocol_ver
         self.packet_handler = dxlsdk.PacketHandler(self._protocol_version)
         self._bandrate = bandrate
-        self.port_handler.openPort()
+        assert self.port_handler.openPort(), "Failed to open the port."
 
     def set_operating_mode(self, mode: DXLOpsMode) -> None:
         result, error = self.packet_handler.write1ByteTxRx(
             self.port_handler,
             self.motor_id,
-            DXLTableDefault.OPERATING_MODE[0],
+            DXLTableDefault.OPERATING_MODE.value[0],
             int(mode),
         )
         self._dxl_handle_error(result, error)
@@ -37,65 +37,76 @@ class SerDXL:
         rxpackage, result, error = self.packet_handler.read1ByteTxRx(
             self.port_handler,
             self.motor_id,
-            DXLTableDefault.OPERATING_MODE[0],
+            DXLTableDefault.OPERATING_MODE.value[0],
         )
         self._dxl_handle_error(result, error)
         return rxpackage
 
     def set_torque_enabled(self, enable: bool) -> None:
+        print(int(enable))
         result, error = self.packet_handler.write1ByteTxRx(
             self.port_handler,
             self.motor_id,
-            DXLTableDefault.TORQUE_ENABLE[0],
+            DXLTableDefault.TORQUE_ENABLE.value[0],
             int(enable),
         )
         self._dxl_handle_error(result, error)
 
     def get_position(self) -> int:
         rxpackage, result, error = self.packet_handler.read4ByteTxRx(
-            self.port_handler, self.motor_id, DXLTableDefault.PRESENT_POSITION[0]
+            self.port_handler, self.motor_id, DXLTableDefault.PRESENT_POSITION.value[0]
         )
         self._dxl_handle_error(result, error)
         return rxpackage
 
     def set_position(self, val: int) -> None:
         result, error = self.packet_handler.write4ByteTxRx(
-            self.port_handler, self.motor_id, DXLTableDefault.PRESENT_POSITION[0], val
+            self.port_handler, self.motor_id, DXLTableDefault.PRESENT_POSITION.value[0], val
         )
         self._dxl_handle_error(result, error)
 
     def set_band_rate(self, val: DXLBandRate) -> None:
+        rate = DXLTableDefault.BAND_RATE.value[0]
         result, error = self.packet_handler.write1ByteTxRx(
-            self.port_handler, self.motor_id, DXLTableDefault.BAND_RATE[0], val
+            self.port_handler, self.motor_id, rate, val
         )
         self._dxl_handle_error(result, error)
+        #self.port_handler.setBaudRate(rate)
 
     def set_led(self, r: int, g: int, b: int) -> None:
         result, error = self.packet_handler.write1ByteTxRx(
             self.port_handler,
             self.motor_id,
-            DXLTableDefault.LED_RED[0],
+            DXLTableDefault.LED_RED.value[0],
             r,
         )
         self._dxl_handle_error(result, error)
         result, error = self.packet_handler.write1ByteTxRx(
             self.port_handler,
             self.motor_id,
-            DXLTableDefault.LED_GREEN[0],
+            DXLTableDefault.LED_GREEN.value[0],
             g,
         )
         self._dxl_handle_error(result, error)
         result, error = self.packet_handler.write1ByteTxRx(
             self.port_handler,
             self.motor_id,
-            DXLTableDefault.LED_BLUE[0],
+            DXLTableDefault.LED_BLUE.value[0],
             b,
         )
         self._dxl_handle_error(result, error)
 
     def read_reg(self, name: DXLTableDefault) -> int:
-        addr = name[0]
-        dat_len = name[1]
+        addr = name.value[0]
+        dat_len = name.value[1]
+        return self.read_reg0(addr, dat_len)
+
+    def write_reg(self, name: DXLTableDefault, val: int) -> int:
+        addr = name.value[0]
+        dat_len = name.value[1]
+        self.write_reg0(addr, dat_len, val)
+
+    def read_reg0(self, addr: int, dat_len: int) -> int:
         rxpackage = None
         result = None
         error = None
@@ -116,9 +127,7 @@ class SerDXL:
         self._dxl_handle_error(result, error)
         return rxpackage
 
-    def write_reg(self, name: DXLTableDefault, val: int) -> int:
-        addr = name[0]
-        dat_len = name[1]
+    def write_reg0(self, addr: int, dat_len: int, val: int) -> int:
         result = None
         error = None
         if dat_len == 1:
@@ -137,9 +146,13 @@ class SerDXL:
             return
         self._dxl_handle_error(result, error)
 
+    def close_port(self) -> None:
+        self.port_handler.closePort()
+
     def _dxl_handle_error(self, result: int, error: int) -> None:
-        print(self.packet_handler.getRxPacketError(error))
-        assert result == 0
+        assert (
+            result == dxlsdk.COMM_SUCCESS
+        ), f"result = {result} :" + self.packet_handler.getRxPacketError(error)
 
     def _handle_error(self, complete: bool, msg: str = None) -> None:
         if msg is not None:
