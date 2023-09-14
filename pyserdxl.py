@@ -8,6 +8,8 @@ class SerDXL:
     Note: only tested on PH54
     """
 
+    pulse_per_rev = 607500  # for PH42-020-S300-R
+
     def __init__(
         self, port: str, bandrate: int = 57600, protocol_ver: float = 2.0, motor_id=1
     ) -> None:
@@ -18,7 +20,7 @@ class SerDXL:
         self._bandrate = bandrate
         self.port_handler.openPort()
 
-    def set_operating_mode(self, mode: OpsMode) -> None:
+    def set_operating_mode(self, mode: DXLOpsMode) -> None:
         result, error = self.packet_handler.write1ByteTxRx(
             self.port_handler,
             self.motor_id,
@@ -26,6 +28,15 @@ class SerDXL:
             int(mode),
         )
         self._dxl_handle_error(result, error)
+
+    def get_operating_mode(self) -> None:
+        rxpackage, result, error = self.packet_handler.read1ByteTxRx(
+            self.port_handler,
+            self.motor_id,
+            DXLTableDefault.OPERATING_MODE[0],
+        )
+        self._dxl_handle_error(result, error)
+        return rxpackage
 
     def set_torque_enabled(self, enable: bool) -> None:
         result, error = self.packet_handler.write1ByteTxRx(
@@ -46,6 +57,35 @@ class SerDXL:
     def set_position(self, val: int) -> None:
         result, error = self.packet_handler.write4ByteTxRx(
             self.port_handler, self.motor_id, DXLTableDefault.PRESENT_POSITION[0], val
+        )
+        self._dxl_handle_error(result, error)
+
+    def set_band_rate(self, val: DXLBandRate) -> None:
+        result, error = self.packet_handler.write1ByteTxRx(
+            self.port_handler, self.motor_id, DXLTableDefault.BAND_RATE[0], val
+        )
+        self._dxl_handle_error(result, error)
+
+    def set_led(self, r: int, g: int, b: int) -> None:
+        result, error = self.packet_handler.write1ByteTxRx(
+            self.port_handler,
+            self.motor_id,
+            DXLTableDefault.LED_RED[0],
+            r,
+        )
+        self._dxl_handle_error(result, error)
+        result, error = self.packet_handler.write1ByteTxRx(
+            self.port_handler,
+            self.motor_id,
+            DXLTableDefault.LED_GREEN[0],
+            g,
+        )
+        self._dxl_handle_error(result, error)
+        result, error = self.packet_handler.write1ByteTxRx(
+            self.port_handler,
+            self.motor_id,
+            DXLTableDefault.LED_BLUE[0],
+            b,
         )
         self._dxl_handle_error(result, error)
 
@@ -102,13 +142,42 @@ class SerDXL:
             print(msg)
         assert complete
 
+    @property
+    def pos(self) -> int:
+        return self.get_position()
 
-class OpsMode(IntEnum):
+    @pos.setter
+    def pos(self, val: int) -> None:
+        self.set_position(val)
+
+    @property
+    def ops_mode(self) -> int:
+        return self.get_operating_mode()
+
+    @ops_mode.setter
+    def ops_mode(self, val: DXLOpsMode) -> None:
+        self.set_operating_mode(val)
+
+
+class DXLOpsMode(IntEnum):
     CURRENT_CONTROL = 0
     VELOCITY_CONTROL = 1
     POSITION_CONTROL = 3
     EXTENDED_POSITION_CONTROL = 4
     VOLTAGE_CONTROL = 16
+
+
+class DXLBandRate(IntEnum):
+    B_9600 = 0
+    B_57600 = 1
+    B_115200 = 2
+    B_1M = 3
+    B_2M = 4
+    B_3M = 5
+    B_4M = 6
+    B_4M5 = 7
+    B_6M = 8
+    B_10M5 = 9
 
 
 class DXLTableDefault(Enum):
