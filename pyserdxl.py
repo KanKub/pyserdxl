@@ -47,7 +47,7 @@ class SerDXL:
     def set_position(self, val: int) -> None:
         # inline code for little performance imporvement.
         result, error = self.packet_handler.write4ByteTxRx(
-            self.port_handler, self.motor_id, self.reg_table.PRESENT_POSITION.value[0], val
+            self.port_handler, self.motor_id, self.reg_table.GOAL_POSITION.value[0], val
         )
         self._dxl_handle_error(result, error)
 
