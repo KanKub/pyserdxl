@@ -22,6 +22,7 @@ class SerDXL:
         self._protocol_version = protocol_ver
         self.packet_handler = dxlsdk.PacketHandler(self._protocol_version)
         self._bandrate = bandrate
+        self.port_handler.setBaudRate(bandrate)
         assert self.port_handler.openPort(), "Failed to open the port."
 
     def set_operating_mode(self, mode: DXLOpsMode) -> None:
@@ -43,7 +44,6 @@ class SerDXL:
         return rxpackage
 
     def set_torque_enabled(self, enable: bool) -> None:
-        print(int(enable))
         result, error = self.packet_handler.write1ByteTxRx(
             self.port_handler,
             self.motor_id,
@@ -66,12 +66,12 @@ class SerDXL:
         self._dxl_handle_error(result, error)
 
     def set_band_rate(self, val: DXLBandRate) -> None:
-        rate = DXLTableDefault.BAND_RATE.value[0]
+        rate = val.value
         result, error = self.packet_handler.write1ByteTxRx(
-            self.port_handler, self.motor_id, rate, val
+            self.port_handler, self.motor_id, DXLTableDefault.BAND_RATE.value[0], rate[0]
         )
         self._dxl_handle_error(result, error)
-        #self.port_handler.setBaudRate(rate)
+        self.port_handler.setBaudRate(rate[1])
 
     def set_led(self, r: int, g: int, b: int) -> None:
         result, error = self.packet_handler.write1ByteTxRx(
@@ -184,17 +184,17 @@ class DXLOpsMode(IntEnum):
     VOLTAGE_CONTROL = 16
 
 
-class DXLBandRate(IntEnum):
-    B_9600 = 0
-    B_57600 = 1
-    B_115200 = 2
-    B_1M = 3
-    B_2M = 4
-    B_3M = 5
-    B_4M = 6
-    B_4M5 = 7
-    B_6M = 8
-    B_10M5 = 9
+class DXLBandRate(Enum):
+    B_9600 = [0,9600]
+    B_57600 = [1,57600]
+    B_115200 = [2,115200]
+    B_1M = [3,1e6]
+    B_2M = [4,2e6]
+    B_3M = [5,3e6]
+    B_4M = [6,4e6]
+    B_4M5 = [7,4.5e6]
+    B_6M = [8,6e6]
+    B_10M5 = [9,10.5e6]
 
 
 class DXLTableDefault(Enum):
