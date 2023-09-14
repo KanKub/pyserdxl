@@ -2,6 +2,10 @@ from __future__ import annotations
 from enum import Enum, IntEnum
 import dynamixel_sdk as dxlsdk
 
+__author__ = "Kan Keawhanam"
+__email__ = "kan.kea57@gmail.com"
+__version__ = "0.1.0"
+
 
 class SerDXL:
     """Easy Dynamixel Interface for Python.
