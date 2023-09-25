@@ -6,7 +6,7 @@ import numpy as np
 
 __author__ = "Kan Keawhanam"
 __email__ = "kan.kea57@gmail.com"
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 
 class SerDxl:
@@ -32,7 +32,7 @@ class SerDxl:
         self._bandrate = bandrate
         self.port_handler.setBaudRate(bandrate)
         self._reg_table = DXLTablePH
-        if series == None:
+        if series is None:
             self.set_series(DXLTablePH)
         self.set_series(series)
         assert self.port_handler.openPort(), "Failed to open the port."
@@ -67,7 +67,7 @@ class SerDxl:
     def set_torque_enabled(self, enable: bool) -> None:
         self.write_reg(self._reg_table.TORQUE_ENABLE, int(enable))
 
-    def get_torque_enabled(self, enable: bool) -> None:
+    def get_torque_enabled(self) -> None:
         return self.read_reg(self._reg_table.TORQUE_ENABLE)
 
     def get_position(self) -> int:
