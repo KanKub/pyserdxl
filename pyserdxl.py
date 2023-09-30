@@ -6,7 +6,7 @@ import numpy as np
 
 __author__ = "Kan Keawhanam"
 __email__ = "kan.kea57@gmail.com"
-__version__ = "0.2.1"
+__version__ = "0.2.3"
 
 
 class SerDxl:
@@ -32,9 +32,10 @@ class SerDxl:
         self._bandrate = bandrate
         self.port_handler.setBaudRate(bandrate)
         self._reg_table = DXLTablePH
-        if series == None:
+        if series is None:
             self.set_series(DXLTablePH)
-        self.set_series(series)
+        else:    
+            self.set_series(series)
         assert self.port_handler.openPort(), "Failed to open the port."
 
     def set_series(self, reg_table: Enum) -> None:
@@ -50,7 +51,7 @@ class SerDxl:
         self.write_reg(self._reg_table.OPERATING_MODE, int(mode))
 
     def get_operating_mode(self) -> None:
-        return self.read_reg0(self._reg_table.OPERATING_MODE)
+        return self.read_reg(self._reg_table.OPERATING_MODE)
 
     def get_acceleration_prof(self) -> int:
         self.read_reg(self._reg_table.PROFILE_ACCELERATION)
@@ -67,8 +68,8 @@ class SerDxl:
     def set_torque_enabled(self, enable: bool) -> None:
         self.write_reg(self._reg_table.TORQUE_ENABLE, int(enable))
 
-    def get_torque_enabled(self, enable: bool) -> None:
-        return self.read_reg0(self._reg_table.TORQUE_ENABLE)
+    def get_torque_enabled(self) -> None:
+        return self.read_reg(self._reg_table.TORQUE_ENABLE)
 
     def get_position(self) -> int:
         # inline code for little performance imporvement.
@@ -172,6 +173,15 @@ class SerDxl:
 
     def set_moving_threshold(self, val: int) -> None:
         self.write_reg(self._reg_table.MOVING_THRESHOLD, val)
+
+    def set_position_p_gain(self, val: int) -> None:
+        self.write_reg(self._reg_table.POSITION_P_GAIN, val)
+
+    def set_position_i_gain(self, val: int) -> None:
+        self.write_reg(self._reg_table.POSITION_I_GAIN, val)
+
+    def set_position_d_gain(self, val: int) -> None:
+        self.write_reg(self._reg_table.POSITION_D_GAIN, val)
 
     def is_moving(self) -> bool:
         # inline code for little performance imporvement.
@@ -316,6 +326,10 @@ class SerDxl:
     @property
     def pwm(self) -> int:
         return self.get_pwm()
+    
+    @property
+    def reg_table(self) -> Enum:
+        return self._reg_table
     
         # ======================
 
@@ -463,6 +477,7 @@ class DXLOpsMode(IntEnum):
     VELOCITY_CONTROL = 1
     POSITION_CONTROL = 3
     EXTENDED_POSITION_CONTROL = 4
+    CURRENT_BASED_POSITION_CONTROL = 5
     PWM_CONTROL = 16
 
 
