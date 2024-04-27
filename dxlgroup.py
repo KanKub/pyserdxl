@@ -4,7 +4,7 @@ from enum import Enum
 import numpy as np
 import dynamixel_sdk as dxlsdk
 from numpy import ndarray
-from modules.pyserdxl import DXLOpsMode, SerDxl, DXLTablePH
+from .pyserdxl import DXLOpsMode, SerDxl, DXLTablePH
 
 __author__ = "Kan Keawhanam"
 __email__ = "kan.kea57@gmail.com"
@@ -212,7 +212,7 @@ class DxlGroup:
 
     @property
     def pos_deg(self) -> ndarray:
-        return self.get_positions()
+        return self.get_positions_deg()
 
     @property
     def pos_rad(self) -> ndarray:
