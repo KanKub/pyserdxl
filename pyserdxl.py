@@ -3,10 +3,11 @@ from enum import Enum, IntEnum
 import dynamixel_sdk as dxlsdk
 import time
 import numpy as np
+from pandas import Series
 
 __author__ = "Kan Keawhanam"
 __email__ = "kan.kea57@gmail.com"
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 
 
 class SerDxl:
@@ -24,8 +25,12 @@ class SerDxl:
         protocol_ver: float = 2.0,
         motor_id: int = 1,
         series: Enum = None,
+        port_handler=None,
     ) -> None:
-        self.port_handler = dxlsdk.PortHandler(port)
+        if port_handler is None:
+            self.port_handler = dxlsdk.PortHandler(port)
+        else:
+            self.port_handler = port_handler
         self.motor_id = motor_id
         self._protocol_version = protocol_ver
         self.packet_handler = dxlsdk.PacketHandler(self._protocol_version)
@@ -34,7 +39,7 @@ class SerDxl:
         self._reg_table = DXLTablePH
         if series is None:
             self.set_series(DXLTablePH)
-        else:    
+        else:
             self.set_series(series)
         assert self.port_handler.openPort(), "Failed to open the port."
 
@@ -94,7 +99,7 @@ class SerDxl:
         )
         self._dxl_handle_error(result, error)
         return SerDxl.to_signed16(rxpackage)
-    
+
     def get_velocity(self) -> int:
         # inline code for little performance imporvement.
         rxpackage, result, error = self.packet_handler.read4ByteTxRx(
@@ -102,7 +107,7 @@ class SerDxl:
         )
         self._dxl_handle_error(result, error)
         return SerDxl.to_signed32(rxpackage)
-    
+
     def get_pwm(self) -> int:
         # inline code for little performance imporvement.
         rxpackage, result, error = self.packet_handler.read2ByteTxRx(
@@ -110,7 +115,6 @@ class SerDxl:
         )
         self._dxl_handle_error(result, error)
         return SerDxl.to_signed16(rxpackage)
-
 
     def get_goal_current(self) -> int:
         # inline code for little performance imporvement.
@@ -120,6 +124,15 @@ class SerDxl:
         self._dxl_handle_error(result, error)
         return SerDxl.to_signed16(rxpackage)
     
+    def get_goal_velocity(self) -> int:
+        # inline code for little performance imporvement.
+        rxpackage, result, error = self.packet_handler.read4ByteTxRx(
+            self.port_handler, self.motor_id, self._reg_table.GOAL_VELOCITY.value[0]
+        )
+        self._dxl_handle_error(result, error)
+        return SerDxl.to_signed32(rxpackage)
+
+
     def get_goal_pwm(self) -> int:
         # inline code for little performance imporvement.
         rxpackage, result, error = self.packet_handler.read2ByteTxRx(
@@ -131,7 +144,10 @@ class SerDxl:
     def set_goal_position(self, val: int) -> None:
         # inline code for little performance imporvement.
         result, error = self.packet_handler.write4ByteTxRx(
-            self.port_handler, self.motor_id, self._reg_table.GOAL_POSITION.value[0], val
+            self.port_handler,
+            self.motor_id,
+            self._reg_table.GOAL_POSITION.value[0],
+            val,
         )
         self._dxl_handle_error(result, error)
 
@@ -139,6 +155,14 @@ class SerDxl:
         # inline code for little performance imporvement.
         result, error = self.packet_handler.write2ByteTxRx(
             self.port_handler, self.motor_id, self._reg_table.GOAL_CURRENT.value[0], val
+        )
+        self._dxl_handle_error(result, error)
+
+
+    def set_goal_velocity(self, val: int) -> int:
+        # inline code for little performance imporvement.
+        result, error = self.packet_handler.write4ByteTxRx(
+            self.port_handler, self.motor_id, self._reg_table.GOAL_VELOCITY.value[0], val
         )
         self._dxl_handle_error(result, error)
 
@@ -173,6 +197,12 @@ class SerDxl:
 
     def set_moving_threshold(self, val: int) -> None:
         self.write_reg(self._reg_table.MOVING_THRESHOLD, val)
+
+    def set_velocity_p_gain(self, val: int) -> None:
+        self.write_reg(self._reg_table.VELOCITY_P_GAIN, val)
+
+    def set_velocity_i_gain(self, val: int) -> None:
+        self.write_reg(self._reg_table.VELOCITY_I_GAIN, val)
 
     def set_position_p_gain(self, val: int) -> None:
         self.write_reg(self._reg_table.POSITION_P_GAIN, val)
@@ -294,6 +324,7 @@ class SerDxl:
 
     def pluse_to_deg(self, val: int) -> float:
         return val / self._DEG_TO_PULSE
+        
 
     def pluse_to_rad(self, val: int) -> float:
         return val / self._RAD_TO_PULSE
@@ -318,25 +349,25 @@ class SerDxl:
     @property
     def current(self) -> int:
         return self.get_current()
-    
+
     @property
     def vel(self) -> int:
         return self.get_velocity()
-    
+
     @property
     def pwm(self) -> int:
         return self.get_pwm()
-    
+
     @property
     def reg_table(self) -> Enum:
         return self._reg_table
-    
+
         # ======================
 
     @property
     def goal_pwm(self) -> int:
         return self.get_goal_pwm()
-    
+
     @goal_pwm.setter
     def goal_pwm(self, val: int) -> None:
         self.set_goal_pwm(val)
@@ -344,11 +375,21 @@ class SerDxl:
 
     @property
     def goal_current(self) -> int:
-        return self.pluse_to_rad(self.get_goal_current())
+        return self.get_goal_current()
 
     @goal_current.setter
     def goal_current(self, val: int) -> None:
         self.set_goal_current(val)
+
+        # ======================
+
+    @property
+    def goal_vel(self) -> int:
+        return self.get_goal_velocity()
+
+    @goal_vel.setter
+    def goal_vel(self, val: int) -> None:
+        self.set_goal_velocity(val)
 
         # ======================
 
@@ -464,13 +505,14 @@ class SerDxl:
 
     @staticmethod
     def to_signed16(n):
-        n = n & 0xffff
+        n = n & 0xFFFF
         return (n ^ 0x8000) - 0x8000
 
     @staticmethod
     def to_signed32(n):
-        n = n & 0xffffffff
+        n = n & 0xFFFFFFFF
         return (n ^ 0x80000000) - 0x80000000
+
 
 class DXLOpsMode(IntEnum):
     CURRENT_CONTROL = 0
