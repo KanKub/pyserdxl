@@ -12,7 +12,6 @@ __version__ = "0.2.1"
 
 
 class DxlGroup:
-
     """Dynamixel motors group control interface.
     Note: Bulk read/write protocol are not implemented.
     """
@@ -63,6 +62,18 @@ class DxlGroup:
         for motor in self.motors:
             motor.set_led(enable)
 
+    def get_goal_currents(self) -> list[int]:
+        length = len(self.motors)
+        res = np.ones(length) * np.nan
+        for i in range(length):
+            res[i] = self.motors[i].goal_current
+        return res
+
+    def set_goal_currents(self, vals: list[int]) -> None:
+        length = len(self.motors)
+        for i in range(length):
+            self.motors[i].goal_current = vals[i]
+
     def set_goal_velocities(self, vals: list[int]) -> None:
         length = len(self.motors)
         for i in range(length):
@@ -82,6 +93,11 @@ class DxlGroup:
         length = len(self.motors)
         for i in range(length):
             self.motors[i].goal_pos_deg = vals[i]
+
+    def set_goal_pwms(self, vals: list[int]) -> None:
+        length = len(self.motors)
+        for i in range(length):
+            self.motors[i].goal_pwm = vals[i]
 
     def move_to(self, vals: list[int]) -> None:
         length = len(self.motors)
@@ -152,28 +168,34 @@ class DxlGroup:
         for i in range(length):
             res[i] = self.motors[i].goal_pos_rad
         return res
-    
+
     def get_currents(self) -> ndarray:
         length = len(self.motors)
         res = np.ones(length) * np.nan
         for i in range(length):
             res[i] = self.motors[i].current
         return res
-    
-    def get_pwm(self) -> ndarray:
+
+    def get_pwms(self) -> ndarray:
         length = len(self.motors)
         res = np.ones(length) * np.nan
         for i in range(length):
             res[i] = self.motors[i].pwm
         return res
-    
+
+    def get_goal_pwms(self) -> ndarray:
+        length = len(self.motors)
+        res = np.ones(length) * np.nan
+        for i in range(length):
+            res[i] = self.motors[i].goal_pwm
+        return res
+
     def get_velocities(self) -> ndarray:
         length = len(self.motors)
         res = np.ones(length) * np.nan
         for i in range(length):
             res[i] = self.motors[i].vel
         return res
-
 
     def set_moving_threshold(self, val: int) -> None:
         self.bulk_write_reg(DXLTablePH.MOVING_THRESHOLD.name, val)
@@ -225,6 +247,26 @@ class DxlGroup:
     @goal_vel.setter
     def goal_vel(self, val: list[int]) -> None:
         self.set_goal_velocities(val)
+
+    @property
+    def goal_current(self) -> ndarray:
+        return self.get_goal_positions()
+
+    @goal_vel.setter
+    def goal_current(self, val: list[int]) -> None:
+        self.set_goal_currents(val)
+
+    @property
+    def pwm(self) -> ndarray:
+        return self.get_pwms()
+
+    @property
+    def goal_pwm(self) -> ndarray:
+        return self.get_goal_pwms()
+
+    @goal_vel.setter
+    def goal_pwm(self, val: list[int]) -> None:
+        self.set_goal_pwms(val)
 
     @property
     def goal_pos(self) -> ndarray:
