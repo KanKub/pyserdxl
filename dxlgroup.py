@@ -249,6 +249,11 @@ class DxlGroup:
         self.set_goal_velocities(val)
 
     @property
+    def vel(self) -> ndarray:
+        return self.get_velocities()
+
+
+    @property
     def goal_current(self) -> ndarray:
         return self.get_goal_positions()
 
